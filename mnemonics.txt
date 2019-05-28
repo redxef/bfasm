@@ -1,0 +1,13 @@
+CLR  [-]
+INC  +
+DEC  -
+PUSH >
+POP  <
+SET  $1+
+MVRP [$1>+$1<-]
+MVRN [$1<+$1>-]
+DUPL [>+>+<<-]>>[-<<+>>]<
+ADD  [<+>-]<
+SUB  [<->-]<
+MUL  MVRP3<DUPL>>>-[<<<DUPL<ADD>>MVRN1<>>>-]<<<CLR<
+SHL  DUPL ADD
