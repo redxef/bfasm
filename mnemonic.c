@@ -25,7 +25,7 @@ int mnemonic_cmp_name(const void *ma, const void *mb) {
         return strcmp(m0->name, m1->name);
 }
 
-void mnemonic_load_from_str(struct mnemonic *m, const char *str) {
+void mnemonic_load_from_str_old(struct mnemonic *m, const char *str) {
         ssize_t slen = strlen(str);
         int field = 0;
         int numargs = 0;
@@ -50,7 +50,7 @@ void mnemonic_load_from_str(struct mnemonic *m, const char *str) {
                 *end = '\0';
                 strings[field++] = start;
                 start = end+1;
-        } while (((end - s) < slen) && (field < (int) sizeof(strings)/sizeof(strings[0])));
+        } while (((end - s) < slen) && (field < (int) (sizeof(strings)/sizeof(strings[0]))));
 
         m->name = malloc(strlen(strings[0])+1);
         m->val = malloc(strlen(strings[1])+1);
@@ -76,6 +76,48 @@ void mnemonic_load_from_str(struct mnemonic *m, const char *str) {
         free(s);
 }
 
+void mnemonic_load_from_str(struct mnemonic *m, const char *str) {
+        char *str_cpy;
+        char *start_mname;
+        char *start_mdef;
+        char *c;
+        int flag = 0, i;
+        int mnemonic_vars[MNEMONIC_MAXVARS];
+
+        str_cpy = malloc(strlen(str) + 1);
+        strcpy(str_cpy, str);
+        start_mname = str_cpy;
+
+        while (isspace(*start_mname))
+                start_mname++;
+        start_mdef = start_mname;
+        while (!isspace(*start_mdef))
+                start_mdef++;
+        *start_mdef = '\0';
+        start_mdef++;
+        while (isspace(*start_mdef))
+                start_mdef++;
+
+        m->name = start_mname;
+        m->val = start_mdef;
+
+        memset(mnemonic_vars, 0, sizeof(mnemonic_vars));
+        c = m->val;
+        while (*c) {
+                if (flag) {
+                        mnemonic_vars[*c - '0']++;
+                        flag = 0;
+                }
+                if (*c == '$') {
+                        flag = 1;
+                }
+                c++;
+        }
+        for (i = 0; i < MNEMONIC_MAXVARS; i++) {
+                m->argcnt += mnemonic_vars[i] > 0;
+        }
+}
+
 void mnemonic_fprint(FILE *f, struct mnemonic *m) {
         fprintf(f, "struct mnemonic {\n");
         fprintf(f, "    name   = %s\n", m->name);
@@ -86,9 +128,14 @@ void mnemonic_fprint(FILE *f, struct mnemonic *m) {
 
 void mnemonic_load_file(FILE *f, struct mnemonic *ms, ssize_t mslen) {
         char buff[1024];
+        char *c;
         int i = 0;
 
-        while (fgets(buff, 1024, f) && i < mslen)
+        while (fgets(buff, 1024, f) && i < mslen) {
+                c = strchr(buff, '\n');
+                if (c != NULL)
+                        *c = '\0';
                 mnemonic_load_from_str(&ms[i++], buff);
+        }
 
 }

@@ -5,6 +5,7 @@
 #define MNEMONIC_H
 
 #define MNEMONIC_MAXLEN         8
+#define MNEMONIC_MAXVARS        8
 
 struct mnemonic {
         char *name;
